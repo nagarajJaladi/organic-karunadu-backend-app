@@ -6,11 +6,11 @@ export function seed ({force = false}={}){
         db.exec('DELETE FROM wishlist; DELETE FROM order_items; DELETE FROM orders; DELETE FROM reviews; DELETE FROM products; DELETE FROM users;');
     }
     const insertUser = db.prepare(
-        `INSERT OR IGNORE INTO users(id, name, email, passowrd, role) VALUES (@id, @name, @email,@password, @role)`
+        `INSERT OR IGNORE INTO users(id, name, email, password, role) VALUES (@id, @name, @email, @password, @role)`
     );
     const inserProduct = db.prepare (
         `INSERT OR IGNORE INTO products (id, name, description, price, category, brand, image, stock, rating, rating_count)
-        VALUES (@id, @name, @description, @price, @category, @brand @image, @stock @rating, @ratingCount)`
+        VALUES (@id, @name, @description, @price, @category, @brand, @image, @stock, @rating, @ratingCount)`
     )
     const insertReview = db.prepare(
     `  INSERT OR IGNORE INTO reviews (id, product_id, author, rating, comment, created_at) VALUES(@id, @productId, @author, @rating, @comment, @createdAt)`

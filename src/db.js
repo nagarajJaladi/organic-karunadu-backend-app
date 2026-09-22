@@ -16,14 +16,14 @@ db.exec(
     CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE;,
+        email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         role    TEXT NOT NULL DEFAULT 'customer'
                 CHECK( role IN ('customer','admin')),
-        created_at TEXT NOT NULL DEFAULT (datatime('now'))
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    CREATE TABLE IF NOT EXISTS product (
+    CREATE TABLE IF NOT EXISTS products (
         id  TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT NOT NULL DEFAULT '',
@@ -43,10 +43,10 @@ db.exec(
         rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
         comment TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS order (
+    CREATE TABLE IF NOT EXISTS orders (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         subtotal REAL  NOT NULL DEFAULT 0,
@@ -61,7 +61,7 @@ db.exec(
         addr_postal_code TEXT NOT NULL DEFAULT '',
         addr_country TEXT NOT NULL DEFAULT '',
         addr_phone TEXT NOT NULL DEFAULT '',
-        created_at TEXT NOT NULL DEFAULT (detetime('now')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     );
     CREATE TABLE IF NOT EXISTS order_items (

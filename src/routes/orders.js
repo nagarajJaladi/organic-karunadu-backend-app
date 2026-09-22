@@ -3,7 +3,7 @@ import { db } from "../db.js";
 import { toOrder, toOrderItem } from "../mapper.js";
 import { asyncHandler, HttpError, round2 } from "../util.js";
 
-export const orderRouter = Router();
+export const ordersRouter = Router();
 
 const FREE_SHIPPING_THRESHOLD = 100;
 const SHIPPING_FEE = 9.99;
@@ -42,26 +42,26 @@ function loadOder(id) {
     return toOrder(row, items);
 }
 
-orderRouter.post('/validate-coupon', asyncHandler((req, res) => {
+ordersRouter.post('/validate-coupon', asyncHandler((req, res) => {
     const {code, items = []} = req.body || {};
     const coupon = findCoupon(code);
     const totals = computeTotals(items, code);
     res.json({valid:!!coupon, coupon:coupon ?? null, totals});
 }));
 
-orderRouter.get('/',asyncHandler((req, res)=> {
+ordersRouter.get('/',asyncHandler((req, res)=> {
     const {userId}=req.query;
     const rows = userId ?
         db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(userId)
         : db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
         res.json(rows.map((r) => loadOder(r.id)));
 }))
-orderRouter.get('/:id',asyncHandler((req, res) => {
+ordersRouter.get('/:id',asyncHandler((req, res) => {
     const order = loadOrder(req.params.id);
     if(!order) throw new HttpError(404, 'Order not found');
     res.json(order);
 }));
-orderRouter.post('/', asyncHandler((req, res)=> {
+ordersRouter.post('/', asyncHandler((req, res)=> {
     const {userId, items, address, couponCode} = req.body || {};
     if(!userId) throw new HttpError(400, 'userId is required');
     if(!Array.isArray(items) || items.length ===0 ) throw new HttpError(400, 'items must be non-empty array');
@@ -112,7 +112,7 @@ orderRouter.post('/', asyncHandler((req, res)=> {
     tx();
     res.status(201).json(loadOder(id));
 }));
-orderRouter.patch('/:id/status', asyncHandler ((req, res)=> {
+ordersRouter.patch('/:id/status', asyncHandler ((req, res)=> {
     const {status} = req.body || {};
     if(!STATUSES.includes(status)) {
 

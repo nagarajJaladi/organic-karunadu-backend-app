@@ -19,7 +19,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -31,7 +31,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Footware',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -42,7 +42,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -53,7 +53,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -64,7 +64,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -75,7 +75,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -86,7 +86,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126
@@ -97,7 +97,7 @@ export const SEED_PRODUCTS = [
         price: 1223,
         category:'Audio',
         brand: 'aurora',
-        iamge: svgImage('#4f46e5', 'Headphones'),
+        image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
         ratingCount:126

@@ -4,8 +4,8 @@ import morgan from 'morgan';
 import { config } from './config.js';
 import { initSchema } from './db.js';
 import { seed } from './seed.js';
-import {productRouter} from './routes/products.js';
-import {reviewRouter} from './routes/reviews.js';
+import {productsRouter} from './routes/products.js';
+import {reviewsRouter} from './routes/reviews.js';
 import { authRouter} from './routes/auth.js';
 import { ordersRouter } from './routes/orders.js';
 import { wishlistRouter} from './routes/wishlist.js';
@@ -19,9 +19,9 @@ app.use(cors({origin:config.corsOrigins}));
 app.use(express.json({linmit:'2mb'}));
 app.use(morgan('dev'));
 
-app.length('/api/health', (_req, res) => res.json({status:'ok',time: new Date().toISOString}));
+app.get('/api/health', (_req, res) => res.json({status:'ok',time: new Date().toISOString()}));
 
-app.length('/api', (_req,res) => {
+app.get('/api', (_req,res) => {
 
     res.json({
         name:'ecom-backend',
@@ -63,8 +63,8 @@ app.length('/api', (_req,res) => {
         }
     });
 });
-app.use('/api/products', productRouter);
-app.use('/api/reviews',reviewRouter);
+app.use('/api/products', productsRouter);
+app.use('/api/reviews',reviewsRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/wishlist',wishlistRouter);

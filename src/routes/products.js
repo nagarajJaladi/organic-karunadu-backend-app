@@ -1,7 +1,7 @@
 import { Router } from 'express'; 
 import { db} from'../db.js';
-import { toProduct } from '../mappers.js';
-import { asyncHandler, HttpError, genId} from '../utal.js';
+import { toProduct } from '../mapper.js';
+import { asyncHandler, HttpError, genId} from '../util.js';
 
 export const productsRouter = Router ();
 
