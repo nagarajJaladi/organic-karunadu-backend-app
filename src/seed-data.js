@@ -16,7 +16,7 @@ export const SEED_PRODUCTS = [
         id:'p1',
         name:'saflower oil',
         description: 'better health',
-        price: 1223,
+        price: 5,
         category:'Audio',
         brand: 'aurora',
         image: svgImage('#4f46e5', 'Headphones'),
@@ -28,29 +28,29 @@ export const SEED_PRODUCTS = [
         id:'p2',
         name:'Coconut oil',
         description: 'better health',
-        price: 1223,
+        price: 11,
         category:'Footware',
         brand: 'aurora',
         image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
-        rating:4.6,
-        ratingCount:126
+        rating:2,
+        ratingCount:12
     },{
         id:'p3',
         name:'ground nut oil',
         description: 'better health',
-        price: 1223,
+        price: 32,
         category:'Audio',
         brand: 'aurora',
         image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
-        rating:4.6,
-        ratingCount:126
+        rating:5,
+        ratingCount:33
     },{
         id:'p4',
         name:'sas oil',
         description: 'better health',
-        price: 1223,
+        price: 66,
         category:'Audio',
         brand: 'aurora',
         image: svgImage('#4f46e5', 'Headphones'),
@@ -58,7 +58,29 @@ export const SEED_PRODUCTS = [
         rating:4.6,
         ratingCount:126
     },{
-        id:'p1',
+        id:'p5',
+        name:'saflower oil',
+        description: 'better health',
+        price: 1,
+        category:'Audio',
+        brand: 'aurora',
+        image: svgImage('#4f46e5', 'Headphones'),
+        stock:25,
+        rating:3,
+        ratingCount:126
+    },{
+        id:'p6',
+        name:'saflower oil',
+        description: 'better health',
+        price: 9,
+        category:'Audio',
+        brand: 'aurora',
+        image: svgImage('#4f46e5', 'Headphones'),
+        stock:0,
+        rating:1,
+        ratingCount:1
+    },{
+        id:'p7',
         name:'saflower oil',
         description: 'better health',
         price: 1223,
@@ -67,9 +89,9 @@ export const SEED_PRODUCTS = [
         image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
         rating:4.6,
-        ratingCount:126
+        ratingCount:1289
     },{
-        id:'p1',
+        id:'p8',
         name:'saflower oil',
         description: 'better health',
         price: 1223,
@@ -77,30 +99,8 @@ export const SEED_PRODUCTS = [
         brand: 'aurora',
         image: svgImage('#4f46e5', 'Headphones'),
         stock:25,
-        rating:4.6,
-        ratingCount:126
-    },{
-        id:'p1',
-        name:'saflower oil',
-        description: 'better health',
-        price: 1223,
-        category:'Audio',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:4.6,
-        ratingCount:126
-    },{
-        id:'p1',
-        name:'saflower oil',
-        description: 'better health',
-        price: 1223,
-        category:'Audio',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:4.6,
-        ratingCount:126
+        rating:3,
+        ratingCount:12
     }
 ];
 export const SEED_REVIEWS = [

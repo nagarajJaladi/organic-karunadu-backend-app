@@ -56,13 +56,13 @@ productsRouter.post('/', asyncHandler((req,res) => {
         id: genId('p'),
         name,description, price: Number(price), category, brand, image, stock: Number(stock), rating:0, ratingCount:0
     };
-    db.prepare(`INSERT INTO product (id, name,description, price,category, brand, image,stock, rating, rating_count) 
-        VALUE (@id, @name, @description, @price, @category, @brand, @image, @stock, @rating, @ratingCount)`).run(product);
-        res.status(201).json(product);
+    db.prepare(`INSERT INTO products (id, name, description, price, category, brand, image, stock, rating, rating_count)
+        VALUES (@id, @name, @description, @price, @category, @brand, @image, @stock, @rating, @ratingCount)`).run(product);
+        res.status(201).json(toProduct(product));
 }));
 // /api/produts/:id (partial update)
 productsRouter.put('/:id', asyncHandler((req,res) => {
-    const existing = db.prepare('SELECT * FROM product WHERE id=?').get(req.params.id);
+    const existing = db.prepare('SELECT * FROM products WHERE id=?').get(req.params.id);
     if(!existing) throw new HttpError(404, 'Product not found');
     const fieldMap = {
         name: 'name', description:'description', price:'price', category:'category',
@@ -81,6 +81,11 @@ productsRouter.put('/:id', asyncHandler((req,res) => {
     }
     const row = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
     res.json(toProduct(row));
+}));
+productsRouter.delete('/:id', asyncHandler((req, res) => {
+    const info = db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
+    if (info.changes === 0) throw new HttpError(404, 'Product not found');
+    res.status(204).end();
 }));
 productsRouter.patch('/:id/decrement-stock', asyncHandler((req, res) =>{
     const info= db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
