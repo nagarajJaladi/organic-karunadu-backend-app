@@ -26,3 +26,14 @@ src/
   app.js         Express application setup
   server.js      Server entry point
 ```
+cd /Users/nagarajjaladi/Documents/development/projects/organic-webapp/karunadu-backend
+npm run seed
+
+To recreate the database from scratch, this deletes all its existing data:
+
+
+dropdb organickarunadu
+createdb organickarunadu
+npm run seed
+
+Stop the backend before dropping the database. npm run seed -- --force clears the application tables and reseeds them, but does not drop and recreate the database schema.

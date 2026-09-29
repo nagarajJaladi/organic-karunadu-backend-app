@@ -7,6 +7,12 @@ export const db = new Pool({ connectionString: config.databaseUrl });
 
 export async function initSchema() {
     await db.query(`
+        CREATE TABLE IF NOT EXISTS category (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            
+        );
+
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
