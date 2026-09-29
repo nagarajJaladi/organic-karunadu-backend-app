@@ -11,8 +11,10 @@ import { ordersRouter } from './routes/orders.js';
 import { wishlistRouter} from './routes/wishlist.js';
 import { HttpError } from './util.js';
 
-initSchema();
-seed();
+if (!config.jwtSecret) throw new Error('JWT_SECRET must be set in the backend environment');
+
+await initSchema();
+await seed();
 
 const app = express();
 app.use(cors({origin:config.corsOrigins}));

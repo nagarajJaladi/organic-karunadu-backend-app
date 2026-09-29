@@ -1,36 +1,52 @@
-import {db, initSchema} from './db.js'
-import {SEED_PRODUCTS, SEED_REVIEWS, SEED_USERS} from './seed-data.js';
-export function seed ({force = false}={}){
-    initSchema();
-    if(force){
-        db.exec('DELETE FROM wishlist; DELETE FROM order_items; DELETE FROM orders; DELETE FROM reviews; DELETE FROM products; DELETE FROM users;');
+import { db, initSchema } from './db.js';
+import { SEED_PRODUCTS, SEED_REVIEWS, SEED_USERS } from './seed-data.js';
+
+export async function seed({ force = false } = {}) {
+    await initSchema();
+    const client = await db.connect();
+    try {
+        await client.query('BEGIN');
+        if (force) {
+            await client.query('TRUNCATE wishlist, order_items, orders, reviews, products, users RESTART IDENTITY CASCADE');
+        }
+        for (const user of SEED_USERS) {
+            await client.query(
+                'INSERT INTO users(id, name, email, password, role) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
+                [user.id, user.name, user.email, user.password, user.role]);
+        }
+        for (const product of SEED_PRODUCTS) {
+            await client.query(`INSERT INTO products (id, name, description, price, category, brand, image, stock, rating, rating_count)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT (id) DO NOTHING`,
+                [product.id, product.name, product.description, product.price, product.category, product.brand,
+                    product.image, product.stock, product.rating, product.ratingCount]);
+        }
+        for (const review of SEED_REVIEWS) {
+            await client.query(
+                'INSERT INTO reviews(id, product_id, author, rating, comment, created_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING',
+                [review.id, review.productId, review.author, review.rating, review.comment, review.createdAt]);
+        }
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
     }
-    const insertUser = db.prepare(
-        `INSERT OR IGNORE INTO users(id, name, email, password, role) VALUES (@id, @name, @email, @password, @role)`
-    );
-    const inserProduct = db.prepare (
-        `INSERT OR IGNORE INTO products (id, name, description, price, category, brand, image, stock, rating, rating_count)
-        VALUES (@id, @name, @description, @price, @category, @brand, @image, @stock, @rating, @ratingCount)`
-    )
-    const insertReview = db.prepare(
-    `  INSERT OR IGNORE INTO reviews (id, product_id, author, rating, comment, created_at) VALUES(@id, @productId, @author, @rating, @comment, @createdAt)`
-    );
-    const run = db.transaction(() => {
-        for(const u of SEED_USERS) insertUser.run(u);
-        for(const p of SEED_PRODUCTS) inserProduct.run(p);
-        for(const r of SEED_REVIEWS) insertReview.run(r);
-    });
-    run();
-    const counts = {
-            users: db.prepare('SELECT COUNT(*) c FROM users').get().c,
-            products: db.prepare('SELECT COUNT(*) c FROM products').get().c,
-            reviews: db.prepare('SELECT COUNT(*) c FROM reviews').get().c
+    const [users, products, reviews] = await Promise.all([
+        db.query('SELECT COUNT(*)::int AS count FROM users'),
+        db.query('SELECT COUNT(*)::int AS count FROM products'),
+        db.query('SELECT COUNT(*)::int AS count FROM reviews')
+    ]);
+    return {
+        users: users.rows[0].count,
+        products: products.rows[0].count,
+        reviews: reviews.rows[0].count
     };
-    return counts;
 }
-const isMain = process.argv[1] && process.argv[1].endsWith('seed.js');
-if(isMain) {
-    const force = process.argv.includes('--force');
-    const counts = seed({force});
-    console.log('seed template:',counts);
+
+if (process.argv[1]?.endsWith('seed.js')) {
+    seed({ force: process.argv.includes('--force') })
+        .then((counts) => console.log('seed template:', counts))
+        .catch((error) => { console.error(error); process.exitCode = 1; })
+        .finally(() => db.end());
 }
