@@ -12,12 +12,14 @@ const SORTS = {
 'rating-desc': 'p.rating DESC',
 'name-asc': 'p.name ASC'
 };
-const PRODUCT_SELECT = `SELECT p.*,
+const PRODUCT_SELECT = `SELECT p.*, d.how_to_use, d.nutrition, d.certifications, d.why_choose, d.sourcing,
     COALESCE(array_agg(pi.image_url ORDER BY pi.sort_order) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) AS additional_images
-    FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id`;
+    FROM products p
+    LEFT JOIN product_details d ON d.product_id = p.id
+    LEFT JOIN product_images pi ON pi.product_id = p.id`;
 
 async function loadProduct(id, client = db) {
-    const { rows } = await client.query(`${PRODUCT_SELECT} WHERE p.id = $1 GROUP BY p.id`, [id]);
+    const { rows } = await client.query(`${PRODUCT_SELECT} WHERE p.id = $1 GROUP BY p.id, d.product_id`, [id]);
     return rows[0] ?? null;
 }
 
@@ -44,7 +46,7 @@ productsRouter.get ('/', asyncHandler(async (req, res) => {
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}`: '';
     const orderSql = SORTS[sort] ? `ORDER BY ${SORTS[sort]}` :'';
-    const { rows } = await db.query(`${PRODUCT_SELECT} ${whereSql} ${orderSql} GROUP BY p.id`, params);
+    const { rows } = await db.query(`${PRODUCT_SELECT} ${whereSql} ${orderSql} GROUP BY p.id, d.product_id`, params);
     res.json(rows.map(toProduct));
 }));
 
@@ -61,7 +63,7 @@ productsRouter.get('/categories', asyncHandler(async (_req, res) => {
 // /api/products/featured?count=4
 productsRouter.get('/featured', asyncHandler(async (req,res) => {
     const count = Number(req.query.count) || 4;
-    const { rows } = await db.query(`${PRODUCT_SELECT} GROUP BY p.id ORDER BY p.rating DESC LIMIT $1`, [count]);
+    const { rows } = await db.query(`${PRODUCT_SELECT} GROUP BY p.id, d.product_id ORDER BY p.rating DESC LIMIT $1`, [count]);
     res.json(rows.map(toProduct));
 }))
 productsRouter.get('/:id/images', asyncHandler(async (req, res) => {
@@ -83,7 +85,10 @@ productsRouter.get('/:id', asyncHandler(async (req, res) => {
 }));
 // post /api/products
 productsRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req,res) => {
-    const { name, description = '', price = 0, categoryId, brand = '', image = '', stock = 0 } = req.body || {};
+    const {
+        name, description = '', price = 0, categoryId, brand = '', image = '', stock = 0,
+        howToUse = '', nutrition = '', certifications = '', whyChoose = '', sourcing = ''
+    } = req.body || {};
     const additionalImages = normalizeAdditionalImages(req.body?.additionalImages) ?? [];
     if(!name) throw new HttpError(400, 'name is required');
     if (!categoryId) throw new HttpError(400, 'categoryId is required');
@@ -103,6 +108,10 @@ productsRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req,res)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, 0)`,
             [product.id, product.name, product.description, product.price, product.category, product.categoryId,
                 product.brand, product.image, product.stock]);
+        await client.query(`INSERT INTO product_details
+            (product_id, how_to_use, nutrition, certifications, why_choose, sourcing)
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            [product.id, howToUse, nutrition, certifications, whyChoose, sourcing]);
         for (const [index, imageUrl] of additionalImages.entries()) {
             await client.query('INSERT INTO product_images (product_id, image_url, sort_order) VALUES ($1, $2, $3)',
                 [product.id, imageUrl, index + 1]);
@@ -123,7 +132,7 @@ productsRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req,re
     if(!existing) throw new HttpError(404, 'Product not found');
     const fieldMap = {
         name: 'name', description:'description', price:'price',
-        brand: 'brand', image: 'image', stock:'stock', rating:'rating', ratingCount:'rating_count'
+        brand: 'brand', image:'image', stock:'stock', rating:'rating', ratingCount:'rating_count'
     };
     const sets = [];
     const params = [];
@@ -156,6 +165,21 @@ productsRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req,re
                 await client.query('INSERT INTO product_images (product_id, image_url, sort_order) VALUES ($1, $2, $3)',
                     [req.params.id, imageUrl, index + 1]);
             }
+        }
+        const detailFields = ['howToUse', 'nutrition', 'certifications', 'whyChoose', 'sourcing'];
+        if (detailFields.some((field) => req.body[field] !== undefined)) {
+            await client.query(`INSERT INTO product_details
+                (product_id, how_to_use, nutrition, certifications, why_choose, sourcing)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (product_id) DO UPDATE SET
+                    how_to_use = EXCLUDED.how_to_use,
+                    nutrition = EXCLUDED.nutrition,
+                    certifications = EXCLUDED.certifications,
+                    why_choose = EXCLUDED.why_choose,
+                    sourcing = EXCLUDED.sourcing,
+                    updated_at = CURRENT_TIMESTAMP`,
+                [req.params.id, req.body.howToUse ?? '', req.body.nutrition ?? '', req.body.certifications ?? '',
+                    req.body.whyChoose ?? '', req.body.sourcing ?? '']);
         }
         await client.query('COMMIT');
     } catch (error) {

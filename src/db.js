@@ -45,6 +45,39 @@ export async function initSchema() {
         );
         CREATE INDEX IF NOT EXISTS idx_product_images_product_order
             ON product_images(product_id, sort_order);
+        CREATE TABLE IF NOT EXISTS product_details (
+            product_id TEXT PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
+            how_to_use TEXT NOT NULL DEFAULT '',
+            nutrition TEXT NOT NULL DEFAULT '',
+            certifications TEXT NOT NULL DEFAULT '',
+            why_choose TEXT NOT NULL DEFAULT '',
+            sourcing TEXT NOT NULL DEFAULT '',
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = current_schema() AND table_name = 'products' AND column_name = 'how_to_use'
+            ) THEN
+                EXECUTE 'INSERT INTO product_details (product_id, how_to_use, nutrition, certifications, why_choose, sourcing)
+                    SELECT id, how_to_use, nutrition, certifications, why_choose, sourcing FROM products
+                    ON CONFLICT (product_id) DO UPDATE SET
+                        how_to_use = EXCLUDED.how_to_use,
+                        nutrition = EXCLUDED.nutrition,
+                        certifications = EXCLUDED.certifications,
+                        why_choose = EXCLUDED.why_choose,
+                        sourcing = EXCLUDED.sourcing';
+            END IF;
+        END $$;
+        ALTER TABLE products DROP COLUMN IF EXISTS how_to_use;
+        ALTER TABLE products DROP COLUMN IF EXISTS nutrition;
+        ALTER TABLE products DROP COLUMN IF EXISTS certifications;
+        ALTER TABLE products DROP COLUMN IF EXISTS why_choose;
+        ALTER TABLE products DROP COLUMN IF EXISTS sourcing;
+        INSERT INTO product_details (product_id)
+            SELECT id FROM products
+            ON CONFLICT (product_id) DO NOTHING;
         ALTER TABLE products
             ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT;
         INSERT INTO categories (id, name)
