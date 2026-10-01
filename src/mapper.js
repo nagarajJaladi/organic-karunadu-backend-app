@@ -8,6 +8,7 @@ export function toProduct(row) {
         description: row.description,
         price: row.price,
         category: row.category,
+        categoryId: row.category_id,
         brand: row.brand,
         image: row.image,
         stock: row.stock,

@@ -15,16 +15,23 @@ export async function seed({ force = false } = {}) {
                 [user.id, user.name, user.email, user.password, user.role]);
         }
         for (const product of SEED_PRODUCTS) {
-            await client.query(`INSERT INTO products (id, name, description, price, category, brand, image, stock, rating, rating_count)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT (id) DO NOTHING`,
-                [product.id, product.name, product.description, product.price, product.category, product.brand,
-                    product.image, product.stock, product.rating, product.ratingCount]);
+            const category = await client.query(`
+                INSERT INTO categories (id, name)
+                VALUES ('cat-' || md5(lower(trim($1))), trim($1))
+                ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+                RETURNING id`, [product.category]);
+            await client.query(`INSERT INTO products
+                (id, name, description, price, category, category_id, brand, image, stock, rating, rating_count)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (id) DO NOTHING`,
+                [product.id, product.name, product.description, product.price, product.category, category.rows[0].id,
+                    product.brand, product.image, product.stock, product.rating, product.ratingCount]);
         }
         for (const review of SEED_REVIEWS) {
             await client.query(
                 'INSERT INTO reviews(id, product_id, author, rating, comment, created_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING',
                 [review.id, review.productId, review.author, review.rating, review.comment, review.createdAt]);
         }
+        
         await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK');

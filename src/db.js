@@ -7,10 +7,10 @@ export const db = new Pool({ connectionString: config.databaseUrl });
 
 export async function initSchema() {
     await db.query(`
-        CREATE TABLE IF NOT EXISTS category (
+        CREATE TABLE IF NOT EXISTS categories (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
-            
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS users (
@@ -27,6 +27,7 @@ export async function initSchema() {
             description TEXT NOT NULL DEFAULT '',
             price NUMERIC NOT NULL DEFAULT 0,
             category TEXT NOT NULL DEFAULT '',
+            category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT,
             brand TEXT NOT NULL DEFAULT '',
             image TEXT NOT NULL DEFAULT '',
             stock INTEGER NOT NULL DEFAULT 0,
@@ -34,6 +35,18 @@ export async function initSchema() {
             rating_count INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        ALTER TABLE products
+            ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT;
+        INSERT INTO categories (id, name)
+            SELECT 'cat-' || md5(lower(trim(category))), trim(category)
+            FROM products
+            WHERE trim(category) <> ''
+            ON CONFLICT (name) DO NOTHING;
+        UPDATE products AS product
+            SET category_id = categories.id
+            FROM categories
+            WHERE product.category_id IS NULL
+              AND lower(trim(product.category)) = lower(categories.name);
         CREATE TABLE IF NOT EXISTS reviews (
             id TEXT PRIMARY KEY,
             product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,

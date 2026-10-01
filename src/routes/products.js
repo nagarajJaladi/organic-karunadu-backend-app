@@ -38,6 +38,10 @@ productsRouter.get('/meta/facets', asyncHandler(async (__req, res) => {
     const brands = (await db.query('SELECT DISTINCT brand FROM products ORDER BY brand')).rows.map((r)=> r.brand);
     res.json({categories, brands});
 }));
+productsRouter.get('/categories', asyncHandler(async (_req, res) => {
+    const { rows } = await db.query('SELECT id, name FROM categories ORDER BY name');
+    res.json(rows);
+}));
 // /api/products/featured?count=4
 productsRouter.get('/featured', asyncHandler(async (req,res) => {
     const count = Number(req.query.count) || 4;
@@ -52,16 +56,23 @@ productsRouter.get('/:id', asyncHandler(async (req, res) => {
 }));
 // post /api/products
 productsRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req,res) => {
-    const {name, description='', price=0,category='',brand='',image='',stock=0} = req.body ||{};
+    const { name, description = '', price = 0, categoryId, brand = '', image = '', stock = 0 } = req.body || {};
     if(!name) throw new HttpError(400, 'name is required');
+    if (!categoryId) throw new HttpError(400, 'categoryId is required');
+    const categoryResult = await db.query('SELECT id, name FROM categories WHERE id = $1', [categoryId]);
+    const selectedCategory = categoryResult.rows[0];
+    if (!selectedCategory) throw new HttpError(400, 'Selected category does not exist');
     const product = {
         id: genId('p'),
-        name,description, price: Number(price), category, brand, image, stock: Number(stock), rating:0, ratingCount:0
+        name, description, price: Number(price), category: selectedCategory.name,
+        categoryId: selectedCategory.id, brand, image, stock: Number(stock), rating: 0, ratingCount: 0
     };
-    await db.query(`INSERT INTO products (id, name, description, price, category, brand, image, stock, rating, rating_count)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0)`,
-        [product.id, product.name, product.description, product.price, product.category, product.brand, product.image, product.stock]);
-        res.status(201).json(toProduct(product));
+    const { rows } = await db.query(`INSERT INTO products
+        (id, name, description, price, category, category_id, brand, image, stock, rating, rating_count)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, 0) RETURNING *`,
+        [product.id, product.name, product.description, product.price, product.category, product.categoryId,
+            product.brand, product.image, product.stock]);
+    res.status(201).json(toProduct(rows[0]));
 }));
 // /api/produts/:id (partial update)
 productsRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req,res) => {
@@ -69,11 +80,20 @@ productsRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req,re
     if(!existing.rowCount) throw new HttpError(404, 'Product not found');
     if(!existing) throw new HttpError(404, 'Product not found');
     const fieldMap = {
-        name: 'name', description:'description', price:'price', category:'category',
+        name: 'name', description:'description', price:'price',
         brand: 'brand', image: 'image', stock:'stock', rating:'rating', ratingCount:'rating_count'
     };
     const sets = [];
     const params = [];
+    if (req.body.categoryId !== undefined) {
+        const categoryResult = await db.query('SELECT id, name FROM categories WHERE id = $1', [req.body.categoryId]);
+        const selectedCategory = categoryResult.rows[0];
+        if (!selectedCategory) throw new HttpError(400, 'Selected category does not exist');
+        params.push(selectedCategory.name);
+        sets.push(`category = $${params.length}`);
+        params.push(selectedCategory.id);
+        sets.push(`category_id = $${params.length}`);
+    }
     for(const [key, col] of Object.entries(fieldMap)){
         if(req.body[key]!== undefined) {
             params.push(req.body[key]);
