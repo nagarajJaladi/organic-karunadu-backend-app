@@ -35,6 +35,16 @@ export async function initSchema() {
             rating_count INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS product_images (
+            id BIGSERIAL PRIMARY KEY,
+            product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+            image_url TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (product_id, sort_order)
+        );
+        CREATE INDEX IF NOT EXISTS idx_product_images_product_order
+            ON product_images(product_id, sort_order);
         ALTER TABLE products
             ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT;
         INSERT INTO categories (id, name)

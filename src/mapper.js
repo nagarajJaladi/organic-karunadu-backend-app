@@ -11,6 +11,7 @@ export function toProduct(row) {
         categoryId: row.category_id,
         brand: row.brand,
         image: row.image,
+        images: [row.image, ...(row.additional_images || [])].filter(Boolean),
         stock: row.stock,
         rating: row.rating,
         ratingCount: row.rating_count
