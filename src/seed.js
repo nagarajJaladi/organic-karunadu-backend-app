@@ -7,7 +7,7 @@ export async function seed({ force = false } = {}) {
     try {
         await client.query('BEGIN');
         if (force) {
-            await client.query('TRUNCATE wishlist, order_items, orders, reviews, products, users RESTART IDENTITY CASCADE');
+            await client.query('TRUNCATE wishlist, order_items, orders, reviews, products, categories, users RESTART IDENTITY CASCADE');
         }
         for (const user of SEED_USERS) {
             await client.query(
@@ -32,6 +32,14 @@ export async function seed({ force = false } = {}) {
                 [review.id, review.productId, review.author, review.rating, review.comment, review.createdAt]);
         }
         
+        const seedCategories = [...new Set(SEED_PRODUCTS.map(p => p.category))];
+        for (const category of seedCategories) {
+            await client.query(`
+                INSERT INTO categories (id, name)
+                VALUES ('cat-' || md5(lower(trim($1))), trim($1))
+                ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name`, [category]);
+        }
+        
         await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK');
@@ -39,15 +47,17 @@ export async function seed({ force = false } = {}) {
     } finally {
         client.release();
     }
-    const [users, products, reviews] = await Promise.all([
+    const [users, products, reviews, categories] = await Promise.all([
         db.query('SELECT COUNT(*)::int AS count FROM users'),
         db.query('SELECT COUNT(*)::int AS count FROM products'),
-        db.query('SELECT COUNT(*)::int AS count FROM reviews')
+        db.query('SELECT COUNT(*)::int AS count FROM reviews'),
+        db.query('SELECT COUNT(*)::int AS count FROM categories')
     ]);
     return {
         users: users.rows[0].count,
         products: products.rows[0].count,
-        reviews: reviews.rows[0].count
+        reviews: reviews.rows[0].count,
+        categories: categories.rows[0].count
     };
 }
 

@@ -4,7 +4,7 @@ import morgan from 'morgan';
 import { config } from './config.js';
 import { initSchema } from './db.js';
 import { seed } from './seed.js';
-import {productsRouter} from './routes/products.js';
+import {categoriesRouter, productsRouter} from './routes/products.js';
 import {reviewsRouter} from './routes/reviews.js';
 import { authRouter} from './routes/auth.js';
 import { ordersRouter } from './routes/orders.js';
@@ -66,6 +66,7 @@ app.get('/api', (_req,res) => {
     });
 });
 app.use('/api/products', productsRouter);
+app.use('/api/categories', categoriesRouter);
 app.use('/api/reviews',reviewsRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/orders', ordersRouter);

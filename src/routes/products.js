@@ -5,6 +5,7 @@ import { requireAdmin, requireAuth } from '../auth-middleware.js';
 import { asyncHandler, HttpError, genId} from '../util.js';
 
 export const productsRouter = Router ();
+export const categoriesRouter = Router();
 
 const SORTS = {
 'price-asc': 'p.price ASC',
@@ -59,6 +60,44 @@ productsRouter.get('/meta/facets', asyncHandler(async (__req, res) => {
 productsRouter.get('/categories', asyncHandler(async (_req, res) => {
     const { rows } = await db.query('SELECT id, name FROM categories ORDER BY name');
     res.json(rows);
+}));
+
+categoriesRouter.get('/', asyncHandler(async (_req, res) => {
+    const { rows } = await db.query('SELECT id, name FROM categories ORDER BY name');
+    res.json(rows);
+}));
+
+categoriesRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const name = String(req.body?.name ?? '').trim();
+    if (!name) throw new HttpError(400, 'Category name is required');
+
+    const { rows } = await db.query(`
+        INSERT INTO categories (id, name)
+        VALUES ('cat-' || md5(lower(trim($1))), trim($1))
+        ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id, name`, [name]);
+
+    res.status(201).json(rows[0]);
+}));
+
+categoriesRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const name = String(req.body?.name ?? '').trim();
+    if (!name) throw new HttpError(400, 'Category name is required');
+
+    const { rows } = await db.query(`
+        UPDATE categories
+        SET name = trim($1)
+        WHERE id = $2
+        RETURNING id, name`, [name, req.params.id]);
+
+    if (!rows[0]) throw new HttpError(404, 'Category not found');
+    res.json(rows[0]);
+}));
+
+categoriesRouter.delete('/:id', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+    const { rowCount } = await db.query('DELETE FROM categories WHERE id = $1', [req.params.id]);
+    if (!rowCount) throw new HttpError(404, 'Category not found');
+    res.status(204).end();
 }));
 // /api/products/featured?count=4
 productsRouter.get('/featured', asyncHandler(async (req,res) => {
