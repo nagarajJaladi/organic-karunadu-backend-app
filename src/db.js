@@ -33,6 +33,7 @@ export async function initSchema() {
             stock INTEGER NOT NULL DEFAULT 0,
             rating NUMERIC NOT NULL DEFAULT 0,
             rating_count INTEGER NOT NULL DEFAULT 0,
+            varients JSONB NOT NULL DEFAULT '[]',
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS product_images (
@@ -80,6 +81,8 @@ export async function initSchema() {
             ON CONFLICT (product_id) DO NOTHING;
         ALTER TABLE products
             ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT;
+        ALTER TABLE products
+            ADD COLUMN IF NOT EXISTS varients JSONB NOT NULL DEFAULT '[]';
         INSERT INTO categories (id, name)
             SELECT 'cat-' || md5(lower(trim(category))), trim(category)
             FROM products
@@ -123,6 +126,7 @@ export async function initSchema() {
             price NUMERIC NOT NULL,
             quantity INTEGER NOT NULL CHECK (quantity > 0)
         );
+        ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size TEXT NOT NULL DEFAULT '';
         CREATE TABLE IF NOT EXISTS wishlist (
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,

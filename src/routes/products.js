@@ -79,7 +79,17 @@ categoriesRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req, r
 
     res.status(201).json(rows[0]);
 }));
-
+ function normalizeVarients(varients) {
+    if (!Array.isArray(varients)) return [];
+    return varients
+    .map((v) => ({
+        size: String(v.size ?? '').trim(),
+        price: Number(v.price ?? 0),
+        image: String(v.image ?? '').trim(),
+        stock: Math.max(0, Number(v.stock ?? 0))
+    }))
+    .filter((v) => v.size);
+}   
 categoriesRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
     const name = String(req.body?.name ?? '').trim();
     if (!name) throw new HttpError(400, 'Category name is required');
@@ -126,7 +136,7 @@ productsRouter.get('/:id', asyncHandler(async (req, res) => {
 productsRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req,res) => {
     const {
         name, description = '', price = 0, categoryId, brand = '', image = '', stock = 0,
-        howToUse = '', nutrition = '', certifications = '', whyChoose = '', sourcing = ''
+        howToUse = '', nutrition = '', certifications = '', whyChoose = '', sourcing = '',varients = []
     } = req.body || {};
     const additionalImages = normalizeAdditionalImages(req.body?.additionalImages) ?? [];
     if(!name) throw new HttpError(400, 'name is required');
@@ -137,16 +147,17 @@ productsRouter.post('/', requireAuth, requireAdmin, asyncHandler(async (req,res)
     const product = {
         id: genId('p'),
         name, description, price: Number(price), category: selectedCategory.name,
-        categoryId: selectedCategory.id, brand, image, stock: Number(stock), rating: 0, ratingCount: 0
+        categoryId: selectedCategory.id, brand, image, stock: Number(stock), rating: 0, ratingCount: 0,
+        varients: normalizeVarients(varients)
     };
     const client = await db.connect();
     try {
         await client.query('BEGIN');
         await client.query(`INSERT INTO products
-            (id, name, description, price, category, category_id, brand, image, stock, rating, rating_count)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, 0)`,
+            (id, name, description, price, category, category_id, brand, image, stock, rating, rating_count, varients)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, 0, $10::jsonb)`,
             [product.id, product.name, product.description, product.price, product.category, product.categoryId,
-                product.brand, product.image, product.stock]);
+                product.brand, product.image, product.stock, JSON.stringify(product.varients)]);
         await client.query(`INSERT INTO product_details
             (product_id, how_to_use, nutrition, certifications, why_choose, sourcing)
             VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -171,7 +182,7 @@ productsRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req,re
     if(!existing) throw new HttpError(404, 'Product not found');
     const fieldMap = {
         name: 'name', description:'description', price:'price',
-        brand: 'brand', image:'image', stock:'stock', rating:'rating', ratingCount:'rating_count'
+        brand: 'brand', image:'image', stock:'stock', rating:'rating', ratingCount:'rating_count', varients:'varients'
     };
     const sets = [];
     const params = [];
@@ -187,8 +198,9 @@ productsRouter.put('/:id', requireAuth, requireAdmin, asyncHandler(async (req,re
     }
     for(const [key, col] of Object.entries(fieldMap)){
         if(req.body[key]!== undefined) {
-            params.push(req.body[key]);
-            sets.push(`${col}= $${params.length}`);
+            // params.push(req.body[key]);
+            params.push(key === 'varients' ? JSON.stringify(normalizeVarients(req.body[key])) : req.body[key]);
+            sets.push(key === 'varients' ? `${col} = $${params.length}::jsonb` : `${col} = $${params.length}`);
         }
     }
     const client = await db.connect();

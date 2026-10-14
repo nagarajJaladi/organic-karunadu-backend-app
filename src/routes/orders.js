@@ -66,17 +66,43 @@ ordersRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
     if (!address) throw new HttpError(400, 'Address is required');
     const userId = req.user.id;
 
-    const totals = computeTotals(items, couponCode);
     const id = `ORD-${Date.now()}`;
-    const normalizedItems = items.map((item) => ({
-        productId: item.product ? item.product.id : item.productId,
-        name: item.product ? item.product.name : item.name,
-        price: Number(item.product ? item.product.price : item.price),
-        quantity: Number(item.quantity)
-    }));
     const client = await db.connect();
     try {
         await client.query('BEGIN');
+        const normalizedItems = [];
+        for (const item of items) {
+            const productId = item.product ? item.product.id : item.productId;
+            const quantity = Number(item.quantity);
+            if (!Number.isInteger(quantity) || quantity <= 0) {
+                throw new HttpError(400, 'Item quantity must be a positive integer');
+            }
+            const result = await client.query(
+                'SELECT id, name, price, stock, varients FROM products WHERE id = $1 FOR UPDATE',
+                [productId]);
+            const product = result.rows[0];
+            if (!product) throw new HttpError(404, 'Product not found');
+
+            const size = String(item.size ?? '').trim();
+            const variants = Array.isArray(product.varients) ? [...product.varients] : [];
+            const variantIndex = size ? variants.findIndex((variant) => variant.size === size) : -1;
+            if (size && variantIndex === -1) throw new HttpError(400, `Unknown product size: ${size}`);
+
+            const variant = variantIndex >= 0 ? variants[variantIndex] : null;
+            const availableStock = Number(variant ? variant.stock : product.stock);
+            if (quantity > availableStock) {
+                throw new HttpError(409, `Insufficient stock for ${product.name}${size ? ` (${size})` : ''}`);
+            }
+            const price = Number(variant ? variant.price : product.price);
+            if (variant) {
+                variants[variantIndex] = { ...variant, stock: availableStock - quantity };
+                await client.query('UPDATE products SET varients = $1::jsonb WHERE id = $2', [JSON.stringify(variants), productId]);
+            } else {
+                await client.query('UPDATE products SET stock = stock - $1 WHERE id = $2', [quantity, productId]);
+            }
+            normalizedItems.push({ productId, name: product.name, price, quantity, size });
+        }
+        const totals = computeTotals(normalizedItems, couponCode);
         await client.query(`INSERT INTO orders (id, user_id, subtotal, discount, shipping, total, coupon_code, status,
             addr_full_name, addr_line1, addr_city, addr_postal_code, addr_country, addr_phone)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`, [
@@ -86,10 +112,8 @@ ordersRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
         ]);
         for (const item of normalizedItems) {
             await client.query(
-                'INSERT INTO order_items (order_id, product_id, name, price, quantity) VALUES ($1, $2, $3, $4, $5)',
-                [id, item.productId, item.name, item.price, item.quantity]);
-            await client.query('UPDATE products SET stock = GREATEST(0, stock - $1) WHERE id = $2',
-                [item.quantity, item.productId]);
+                'INSERT INTO order_items (order_id, product_id, name, price, quantity, size) VALUES ($1, $2, $3, $4, $5, $6)',
+                [id, item.productId, item.name, item.price, item.quantity, item.size]);
         }
         await client.query('COMMIT');
     } catch (error) {

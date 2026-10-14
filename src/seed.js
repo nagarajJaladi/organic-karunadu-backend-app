@@ -21,10 +21,11 @@ export async function seed({ force = false } = {}) {
                 ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
                 RETURNING id`, [product.category]);
             await client.query(`INSERT INTO products
-                (id, name, description, price, category, category_id, brand, image, stock, rating, rating_count)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (id) DO NOTHING`,
+                (id, name, description, price, category, category_id, brand, image, stock, rating, rating_count,varients)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (id) DO NOTHING`,
                 [product.id, product.name, product.description, product.price, product.category, category.rows[0].id,
-                    product.brand, product.image, product.stock, product.rating, product.ratingCount]);
+                    product.brand, product.image, product.stock, product.rating, product.ratingCount,
+                    JSON.stringify(Array.isArray(product.varients) ? product.varients : Array.isArray(product.variants) ? product.variants : [])]);
         }
         for (const review of SEED_REVIEWS) {
             await client.query(

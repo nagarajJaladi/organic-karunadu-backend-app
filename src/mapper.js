@@ -19,7 +19,8 @@ export function toProduct(row) {
         images: [row.image, ...(row.additional_images || [])].filter(Boolean),
         stock: row.stock,
         rating: row.rating,
-        ratingCount: row.rating_count
+        ratingCount: row.rating_count,
+        varients:Array.isArray(row.varients) ? row.varients : []
     };
 }
 export function toReview(row) {
@@ -48,7 +49,8 @@ export function toOrderItem(row) {
         productId: row.product_id,
         name:row.name,
         price:row.price,
-        quantity: row.quantity
+        quantity: row.quantity,
+        size: row.size ?? ''
     };
 }
 export function toOrder(row, items) {
