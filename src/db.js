@@ -103,13 +103,20 @@ export async function initSchema() {
         );
         CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
+            order_number TEXT UNIQUE,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            customer_name TEXT NOT NULL DEFAULT '',
+            mobile_number TEXT NOT NULL DEFAULT '',
+            customer_email TEXT,
+            shipping_address JSONB NOT NULL DEFAULT '{}'::jsonb,
             subtotal NUMERIC NOT NULL DEFAULT 0,
             discount NUMERIC NOT NULL DEFAULT 0,
             shipping NUMERIC NOT NULL DEFAULT 0,
             total NUMERIC NOT NULL DEFAULT 0,
             coupon_code TEXT,
-            status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled')),
+            status TEXT NOT NULL DEFAULT 'placed',
+            payment_status TEXT NOT NULL DEFAULT 'pending',
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             addr_full_name TEXT NOT NULL DEFAULT '',
             addr_line1 TEXT NOT NULL DEFAULT '',
             addr_city TEXT NOT NULL DEFAULT '',
@@ -118,6 +125,45 @@ export async function initSchema() {
             addr_phone TEXT NOT NULL DEFAULT '',
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT NOT NULL DEFAULT '';
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS mobile_number TEXT NOT NULL DEFAULT '';
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email TEXT;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address JSONB NOT NULL DEFAULT '{}'::jsonb;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pending';
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;
+        UPDATE orders SET order_number = id WHERE order_number IS NULL;
+        ALTER TABLE orders ALTER COLUMN order_number SET NOT NULL;
+        UPDATE orders AS o SET customer_name = COALESCE(NULLIF(o.customer_name, ''), o.addr_full_name, u.name),
+            customer_email = COALESCE(o.customer_email, u.email),
+            mobile_number = COALESCE(NULLIF(o.mobile_number, ''), o.addr_phone),
+            shipping_address = jsonb_build_object(
+                'fullName', o.addr_full_name, 'line1', o.addr_line1, 'city', o.addr_city,
+                'postalCode', o.addr_postal_code, 'country', o.addr_country, 'phone', o.addr_phone
+            )
+            FROM users u WHERE u.id = o.user_id AND o.shipping_address = '{}'::jsonb;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_amounts_nonnegative_check') THEN
+                ALTER TABLE orders ADD CONSTRAINT orders_amounts_nonnegative_check
+                    CHECK (subtotal >= 0 AND discount >= 0 AND shipping >= 0 AND total >= 0) NOT VALID;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_payment_status_check') THEN
+                ALTER TABLE orders ADD CONSTRAINT orders_payment_status_check
+                    CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded')) NOT VALID;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_payment_method_check') THEN
+                ALTER TABLE orders ADD CONSTRAINT orders_payment_method_check
+                    CHECK (payment_method = 'cod') NOT VALID;
+            END IF;
+        END $$;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cod';
+        ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'placed';
+        ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+        UPDATE orders SET status = 'placed' WHERE status IN ('pending', 'paid');
+        ALTER TABLE orders ADD CONSTRAINT orders_status_check
+            CHECK (status IN ('placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'));
         CREATE TABLE IF NOT EXISTS order_items (
             id BIGSERIAL PRIMARY KEY,
             order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -127,6 +173,36 @@ export async function initSchema() {
             quantity INTEGER NOT NULL CHECK (quantity > 0)
         );
         ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size TEXT NOT NULL DEFAULT '';
+        ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name TEXT;
+        ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price NUMERIC(12,2);
+        ALTER TABLE order_items ADD COLUMN IF NOT EXISTS subtotal NUMERIC(12,2);
+        UPDATE order_items SET product_name = name WHERE product_name IS NULL;
+        UPDATE order_items SET unit_price = price WHERE unit_price IS NULL;
+        UPDATE order_items SET subtotal = price * quantity WHERE subtotal IS NULL;
+        ALTER TABLE order_items ALTER COLUMN product_name SET NOT NULL;
+        ALTER TABLE order_items ALTER COLUMN unit_price SET NOT NULL;
+        ALTER TABLE order_items ALTER COLUMN subtotal SET NOT NULL;
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'order_items_amounts_nonnegative_check') THEN
+                ALTER TABLE order_items ADD CONSTRAINT order_items_amounts_nonnegative_check
+                    CHECK (unit_price >= 0 AND subtotal >= 0 AND quantity > 0) NOT VALID;
+            END IF;
+        END $$;
+        CREATE TABLE IF NOT EXISTS order_status_history (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+            old_status TEXT,
+            new_status TEXT NOT NULL CHECK (new_status IN ('placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled')),
+            changed_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+            remarks TEXT,
+            changed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO order_status_history(order_id, old_status, new_status, remarks, changed_at)
+            SELECT o.id, NULL, o.status, 'Initial order status', o.created_at
+            FROM orders o WHERE NOT EXISTS (
+                SELECT 1 FROM order_status_history h WHERE h.order_id = o.id
+            );
         CREATE TABLE IF NOT EXISTS wishlist (
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -135,7 +211,9 @@ export async function initSchema() {
         );
         CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
         CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+        CREATE INDEX IF NOT EXISTS idx_orders_status_created ON orders(status, created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+        CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id, changed_at);
         CREATE INDEX IF NOT EXISTS idx_wishlist_user ON wishlist(user_id);
     `);
 }

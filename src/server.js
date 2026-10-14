@@ -8,6 +8,7 @@ import {categoriesRouter, productsRouter} from './routes/products.js';
 import {reviewsRouter} from './routes/reviews.js';
 import { authRouter} from './routes/auth.js';
 import { ordersRouter } from './routes/orders.js';
+import { adminOrdersRouter } from './routes/admin-orders.js';
 import { wishlistRouter} from './routes/wishlist.js';
 import { HttpError } from './util.js';
 
@@ -50,6 +51,12 @@ app.get('/api', (_req,res) => {
                 'GET /api/auth/users/:id'
             ],
             orders: [
+                'GET /api/admin/orders?page=&pageSize=&search=&status=&paymentStatus=&from=&to=',
+                'GET /api/admin/orders/:id',
+                'GET /api/admin/orders/:id/history',
+                'GET /api/admin/orders/:id/invoice',
+                'PATCH /api/admin/orders/:id/status',
+                'POST /api/admin/orders/:id/cancel',
                 'GET /api/orders?userId=',
                 'GET /api/orders/:id',
                 'POST /api/orders',
@@ -70,6 +77,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/reviews',reviewsRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/admin/orders', adminOrdersRouter);
 app.use('/api/wishlist',wishlistRouter);
 app.use((req, res) =>  {
     res.status(404).json({error:   `Not found: ${req.method} ${req.originalUrl}`});

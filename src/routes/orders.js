@@ -8,7 +8,7 @@ export const ordersRouter = Router();
 const FREE_SHIPPING_THRESHOLD = 100;
 const SHIPPING_FEE = 9.99;
 const COUPONS = [{ code: 'SAVE10', percentOff: 10 }, { code: 'WELCOME20', percentOff: 20 }];
-const STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+const STATUSES = ['placed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
 
 function findCoupon(code) {
     if (!code) return undefined;
@@ -61,10 +61,14 @@ ordersRouter.get('/:id', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 ordersRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
-    const { items, address, couponCode } = req.body || {};
+    const { items, address, couponCode, paymentMethod = 'cod' } = req.body || {};
+    if (paymentMethod !== 'cod') throw new HttpError(400, 'Only cash on delivery is currently supported');
     if (!Array.isArray(items) || !items.length) throw new HttpError(400, 'items must be non-empty array');
     if (!address) throw new HttpError(400, 'Address is required');
     const userId = req.user.id;
+    const userResult = await db.query('SELECT name, email FROM users WHERE id = $1', [userId]);
+    const customer = userResult.rows[0];
+    if (!customer) throw new HttpError(401, 'User account no longer exists');
 
     const id = `ORD-${Date.now()}`;
     const client = await db.connect();
@@ -103,17 +107,32 @@ ordersRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
             normalizedItems.push({ productId, name: product.name, price, quantity, size });
         }
         const totals = computeTotals(normalizedItems, couponCode);
-        await client.query(`INSERT INTO orders (id, user_id, subtotal, discount, shipping, total, coupon_code, status,
-            addr_full_name, addr_line1, addr_city, addr_postal_code, addr_country, addr_phone)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`, [
-            id, userId, totals.subtotal, totals.discount, totals.shipping, totals.total,
-            totals.couponValid ? couponCode : null, 'paid', address.fullName ?? '', address.line1 ?? '',
-            address.city ?? '', address.postalCode ?? '', address.country ?? '', address.phone ?? ''
+        const shippingAddress = {
+            fullName: String(address.fullName ?? '').trim(),
+            line1: String(address.line1 ?? '').trim(),
+            city: String(address.city ?? '').trim(),
+            postalCode: String(address.postalCode ?? '').trim(),
+            country: String(address.country ?? '').trim(),
+            phone: String(address.phone ?? '').trim()
+        };
+        await client.query(`INSERT INTO orders (
+            id, order_number, user_id, customer_name, mobile_number, customer_email, shipping_address,
+            subtotal, discount, shipping, total, coupon_code, status, payment_method, payment_status,
+            addr_full_name, addr_line1, addr_city, addr_postal_code, addr_country, addr_phone
+        ) VALUES ($1, $1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, 'pending', $14, $15, $16, $17, $18, $19)`, [
+            id, userId, shippingAddress.fullName || customer.name, shippingAddress.phone, customer.email,
+            JSON.stringify(shippingAddress), totals.subtotal, totals.discount, totals.shipping, totals.total,
+            totals.couponValid ? couponCode : null, 'placed', paymentMethod, shippingAddress.fullName,
+            shippingAddress.line1, shippingAddress.city, shippingAddress.postalCode, shippingAddress.country, shippingAddress.phone
         ]);
+        await client.query(
+            `INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, remarks)
+             VALUES ($1, NULL, 'placed', $2, 'Order placed by customer')`, [id, userId]);
         for (const item of normalizedItems) {
             await client.query(
-                'INSERT INTO order_items (order_id, product_id, name, price, quantity, size) VALUES ($1, $2, $3, $4, $5, $6)',
-                [id, item.productId, item.name, item.price, item.quantity, item.size]);
+                `INSERT INTO order_items (order_id, product_id, name, price, quantity, size, product_name, unit_price, subtotal)
+                 VALUES ($1, $2, $3, $4, $5, $6, $3, $4, $7)`,
+                [id, item.productId, item.name, item.price, item.quantity, item.size, round2(item.price * item.quantity)]);
         }
         await client.query('COMMIT');
     } catch (error) {
@@ -128,7 +147,24 @@ ordersRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
 ordersRouter.patch('/:id/status', requireAuth, requireAdmin, asyncHandler(async (req, res) => {
     const { status } = req.body || {};
     if (!STATUSES.includes(status)) throw new HttpError(400, `status must be one of: ${STATUSES.join(', ')}`);
-    const result = await db.query('UPDATE orders SET status = $1 WHERE id = $2 RETURNING id', [status, req.params.id]);
-    if (!result.rowCount) throw new HttpError(404, 'Order not found');
+    const client = await db.connect();
+    try {
+        await client.query('BEGIN');
+        const current = await client.query('SELECT status FROM orders WHERE id = $1 FOR UPDATE', [req.params.id]);
+        if (!current.rowCount) throw new HttpError(404, 'Order not found');
+        const oldStatus = current.rows[0].status;
+        if (oldStatus !== status) {
+            await client.query('UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [status, req.params.id]);
+            await client.query(
+                'INSERT INTO order_status_history(order_id, old_status, new_status, changed_by) VALUES ($1, $2, $3, $4)',
+                [req.params.id, oldStatus, status, req.user.id]);
+        }
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
     res.json(await loadOrder(req.params.id));
 }));
