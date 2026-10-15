@@ -36,6 +36,16 @@ export async function initSchema() {
             varients JSONB NOT NULL DEFAULT '[]',
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS serviceable_pincodes (
+            id BIGSERIAL PRIMARY KEY,
+            pincode VARCHAR(6) NOT NULL UNIQUE CHECK (pincode ~ '^[1-9][0-9]{5}$'),
+            city VARCHAR(100),
+            state VARCHAR(100),
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            delivery_charge NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (delivery_charge >= 0),
+            min_order_amount NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (min_order_amount >= 0),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
         CREATE TABLE IF NOT EXISTS product_images (
             id BIGSERIAL PRIMARY KEY,
             product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -143,6 +153,7 @@ export async function initSchema() {
             )
             FROM users u WHERE u.id = o.user_id AND o.shipping_address = '{}'::jsonb;
         CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cod';
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_amounts_nonnegative_check') THEN
@@ -158,7 +169,6 @@ export async function initSchema() {
                     CHECK (payment_method = 'cod') NOT VALID;
             END IF;
         END $$;
-        ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'cod';
         ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'placed';
         ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
         UPDATE orders SET status = 'placed' WHERE status IN ('pending', 'paid');

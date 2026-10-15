@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { toOrder } from '../mapper.js';
 import { requireAdmin, requireAuth } from '../auth-middleware.js';
 import { asyncHandler, HttpError, round2 } from '../util.js';
+import { assertServiceablePincode } from './delivery.js';
 
 export const ordersRouter = Router();
 const FREE_SHIPPING_THRESHOLD = 100;
@@ -74,6 +75,7 @@ ordersRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
     const client = await db.connect();
     try {
         await client.query('BEGIN');
+        await assertServiceablePincode(address.postalCode, client);
         const normalizedItems = [];
         for (const item of items) {
             const productId = item.product ? item.product.id : item.productId;

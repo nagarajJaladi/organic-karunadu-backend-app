@@ -9,6 +9,7 @@ import {reviewsRouter} from './routes/reviews.js';
 import { authRouter} from './routes/auth.js';
 import { ordersRouter } from './routes/orders.js';
 import { adminOrdersRouter } from './routes/admin-orders.js';
+import { deliveryRouter, adminDeliveryRouter } from './routes/delivery.js';
 import { wishlistRouter} from './routes/wishlist.js';
 import { HttpError } from './util.js';
 
@@ -63,6 +64,12 @@ app.get('/api', (_req,res) => {
                 'POST /api/orders/validate-coupon',
                 'PATCH /api/orders/:id/status'
             ],
+            delivery: [
+                'GET /api/delivery/check/:pincode',
+                'GET /api/admin/delivery/pincodes?search=',
+                'POST /api/admin/delivery/pincodes',
+                'PATCH /api/admin/delivery/pincodes/:pincode'
+            ],
             wishlist: [
                 'GET /api/wishlist/:userId',
                 'GET /api/wishlist/:userId/products',
@@ -78,6 +85,8 @@ app.use('/api/reviews',reviewsRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/admin/orders', adminOrdersRouter);
+app.use('/api/delivery', deliveryRouter);
+app.use('/api/admin/delivery', adminDeliveryRouter);
 app.use('/api/wishlist',wishlistRouter);
 app.use((req, res) =>  {
     res.status(404).json({error:   `Not found: ${req.method} ${req.originalUrl}`});
