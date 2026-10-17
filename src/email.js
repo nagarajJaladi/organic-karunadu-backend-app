@@ -26,10 +26,11 @@ import { config } from './config.js';
     }
     async function getTransporter() {
         if (cachedTransporter) return cachedTransporter;
-        const nodemailer = await import('nodemailer').default;
+        const nodemailer = (await import('nodemailer')).default;
         
         const port = Number(config.email.port) || 587;
-
+        console.log('inside getTransporter:1');
+        console.log('config:'+JSON.stringify(config));
         cachedTransporter = nodemailer.createTransport({
             host: config.email.host,
             port: port,
@@ -37,6 +38,7 @@ import { config } from './config.js';
             auth: { user: config.email.user, pass: config.email.password },
             tls:{minVersion: 'TLSv1.2'}
         });
+                console.log('inside getTransporter:2');
         return cachedTransporter;
     }
     export async function sendEmail({to,subject,text}){
