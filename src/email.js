@@ -1,5 +1,4 @@
 import { config } from './config.js';
-export async function sendEmail(to, subject, text) {
     // Implement the email sending logic here, e.g., using an external email service API
     /**
      * 
@@ -57,14 +56,14 @@ export async function sendEmail(to, subject, text) {
             return { delivered: false, logged: true };
         }
     
-    await transporter.sendMail({
-        from: config.email.from,
-        to,
-        subject,
-        text});
-    return {delivered: true, logged: false};
-}
-export async function sendVerificationEmail(to, token) { 
+        await transporter.sendMail({
+            from: config.email.from,
+            to,
+            subject,
+            text});
+        return {delivered: true, logged: false};
+    }
+ export async function sendVerificationEmail(to, token) { 
     const url = `${config.frontEndUrl}/verify-email?token=${encodeURIComponent(token)}`;
     const subject = 'Verify your email address';
     const text = `Welcome to Organic Karunadu \n\n Please verify your email by clicking the following link: ${url}`+

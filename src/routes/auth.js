@@ -96,9 +96,6 @@ authRouter.post('/register', asyncHandler(async (req, res) => {
         } catch (error) {
             console.error('Failed to send verification email:', error);
         }
-    } catch (error) {
-        console.error('Failed to send verification email:', error);
-    }
     res.status(201).json({ ok: true ,pendingVerification: true , message:'Account created. Please check your email to verify your address'});
 }));
 authRouter.post('/verify-email', asyncHandler(async (req, res) => {
