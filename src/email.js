@@ -40,12 +40,13 @@ import { config } from './config.js';
         return cachedTransporter;
     }
     export async function sendEmail({to,subject,text}){
+          console.log('inside sendEmail sending email:3');
         if (!smtpConfigured()){
             logToConsole(to, subject, text, 'SMTP is not properly configured');
             return { delivered: false, logged: true };
         }
         const transporter = await getTransporter();
-
+  console.log('inside sendEmail sending email:4');
         //validate SMTP connection/credentials
         try {
             await transporter.verify();
@@ -55,15 +56,18 @@ import { config } from './config.js';
             logToConsole(to, subject, text, `SMTP verification failed: ${error.message}`);
             return { delivered: false, logged: true };
         }
-    
+      console.log('inside sendEmail sending email:5');
         await transporter.sendMail({
             from: config.email.from,
             to,
             subject,
             text});
+              console.log('inside sendEmail sending email:6');
         return {delivered: true, logged: false};
     }
  export async function sendVerificationEmail(to, token) { 
+      console.log('inside sendverificationEmail sending email:2');
+
     const url = `${config.frontEndUrl}/verify-email?token=${encodeURIComponent(token)}`;
     const subject = 'Verify your email address';
     const text = `Welcome to Organic Karunadu \n\n Please verify your email by clicking the following link: ${url}`+

@@ -90,7 +90,7 @@ authRouter.post('/register', asyncHandler(async (req, res) => {
         );
         return token;
     });
-
+     console.log('token generated for sending email:1');
     try {
              await sendVerificationEmail(normalizedEmail, token);
         } catch (error) {
