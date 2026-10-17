@@ -23,7 +23,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
-    "nodemailer": "^10.1.1",
+    "nodemailer": "^10.1.2",
     "pg": "^8.23.0"
   },
   "devDependencies": {
@@ -32,5 +32,14 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "nodemon": "^3.1.10"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nagarajJaladi/organic-karunadu-backend-app.git"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/nagarajJaladi/organic-karunadu-backend-app/issues"
+  },
+  "homepage": "https://github.com/nagarajJaladi/organic-karunadu-backend-app#readme"
 }

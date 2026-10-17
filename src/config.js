@@ -15,5 +15,13 @@ export const config = {
     corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:4200, http://127.0.0.1:4200')
     .split(',')
     .map((o) => o.trim())
-    .filter(Boolean)
+    .filter(Boolean),
+    frontendUrl: process.env.FRONTED_URL || 'http://localhost:4200',
+    email: {
+        host: process.env.EMAIL_HOST || '',
+        port: Number(process.env.EMAIL_PORT) || 587,
+        user: process.env.EMAIL_USER || '',
+        password: process.env.EMAIL_PASSWORD || '',
+        from: process.env.EMAIL_FROM || ''
+    }
 };

@@ -5,6 +5,27 @@ const { Pool } = pg;
 
 export const db = new Pool({ connectionString: config.databaseUrl });
 
+export async function withTransaction(fn) {
+    const client = await db.connect();
+    try {
+        await client.query('BEGIN');
+        const tx = {
+            query: async (t, p = []) => (await client.query(t, p)).rows,
+            one: async (t, p = []) => (await client.query(t, p)).rows[0],
+            exec: async (t, p = []) => (await client.query(t, p))
+        };
+        const result = await fn(tx);
+        await client.query('COMMIT');
+        return result;
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+
 export async function initSchema() {
     await db.query(`
         CREATE TABLE IF NOT EXISTS categories (
@@ -19,6 +40,16 @@ export async function initSchema() {
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+            password_hash TEXT NOT NULL DEFAULT '',
+            email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS email_verification_tokens (
+            id BIGSERIAL PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            expires_at TIMESTAMPTZ NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS products (
@@ -182,6 +213,11 @@ export async function initSchema() {
             price NUMERIC NOT NULL,
             quantity INTEGER NOT NULL CHECK (quantity > 0)
         );
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE users ALTER COLUMN password SET DEFAULT '';
+
         ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size TEXT NOT NULL DEFAULT '';
         ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name TEXT;
         ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price NUMERIC(12,2);
@@ -225,5 +261,6 @@ export async function initSchema() {
         CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
         CREATE INDEX IF NOT EXISTS idx_order_status_history_order ON order_status_history(order_id, changed_at);
         CREATE INDEX IF NOT EXISTS idx_wishlist_user ON wishlist(user_id);
+        CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user ON email_verification_tokens(user_id);
     `);
 }

@@ -1,6 +1,6 @@
 import { db, initSchema } from './db.js';
 import { SEED_PRODUCTS, SEED_REVIEWS, SEED_USERS } from './seed-data.js';
-
+import {hashPassword} from './util.js';
 export async function seed({ force = false } = {}) {
     await initSchema();
     const client = await db.connect();
@@ -10,9 +10,12 @@ export async function seed({ force = false } = {}) {
             await client.query('TRUNCATE wishlist, order_items, orders, reviews, products, categories, users RESTART IDENTITY CASCADE');
         }
         for (const user of SEED_USERS) {
+            const passwordHash = await hashPassword(user.password);
+
             await client.query(
-                'INSERT INTO users(id, name, email, password, role) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-                [user.id, user.name, user.email, user.password, user.role]);
+                `INSERT INTO users(id, name, email, password, role, password_hash, email_verified, is_active)
+                 VALUES ($1, $2, $3, $4, $5,$6, TRUE, TRUE) ON CONFLICT (id) DO NOTHING`,
+                [user.id, user.name, user.email, user.password, user.role, passwordHash]);
         }
         for (const product of SEED_PRODUCTS) {
             const category = await client.query(`
