@@ -16,7 +16,7 @@ export const config = {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
+    frontEndUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
     email: {
         host: process.env.EMAIL_HOST || '',
         port: Number(process.env.EMAIL_PORT) || 587,

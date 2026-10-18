@@ -73,6 +73,6 @@ import { config } from './config.js';
     const url = `${config.frontEndUrl}/verify-email?token=${encodeURIComponent(token)}`;
     const subject = 'Verify your email address';
     const text = `Welcome to Organic Karunadu \n\n Please verify your email by clicking the following link: ${url}`+
-    `This link will expire in 30 minutes. If you did not request this, please ignore this email.`;
+    ` This link will expire in 30 minutes. If you did not request this, please ignore this email.`;
     return await sendEmail({to, subject, text});
 }
