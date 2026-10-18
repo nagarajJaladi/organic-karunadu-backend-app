@@ -49,6 +49,7 @@ export async function initSchema() {
             id BIGSERIAL PRIMARY KEY,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             token TEXT NOT NULL UNIQUE,
+            used_at TIMESTAMPTZ,
             expires_at TIMESTAMPTZ NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
