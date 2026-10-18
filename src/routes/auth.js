@@ -39,24 +39,35 @@ authRouter.post('/login', asyncHandler(async (req, res) => {
     if (!email || !password) throw new HttpError(400, 'email and password are required');
     const row = await db.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
     const user = row.rows[0];
+    console.log('login:1');
      console.log(JSON.stringify(user));
     if (!user) throw new HttpError(401, 'Invalid email or password');
-
+  console.log('login:2');
     let ok = false;
     if(user)   {
+        console.log('login:3');
         if(user.password_hash) {
+            console.log('login:4');
             ok = await verifyPassword(password, user.password_hash);
+            console.log('login:5');
         } else if(user.password) {
+            console.log('login:6')
             ok = password === user.password;
             if(ok) {
+                console.log('login:7');
                 const passwordHash = await hashPassword(password);
                 await db.query('UPDATE users SET password_hash = $1, password = $2 WHERE id = $3', [passwordHash, '', user.id]);
+                  console.log('login:8');
             }
         }
     }
+      console.log('login:9');
     if(!user || !ok) throw new HttpError(401, 'Invalid email or password');
+      console.log('login:10');
     if(!user.is_active) throw new HttpError(403, 'Account is not active');
+      console.log('login:11');
     if(!user.email_verified) {
+          console.log('login:12');
         return res.status(403).json({ ok: false, code: 'EMAIL_NOT_VERIFIED', error: 'Please verify your email. Check your inbox for the verification email.' });
     }
     res.json({ ok: true,user: toUser(user)   });
