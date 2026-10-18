@@ -37,9 +37,9 @@ export function round2(n) {
 authRouter.post('/login', asyncHandler(async (req, res) => {
     const { email, password } = req.body || {};
     if (!email || !password) throw new HttpError(400, 'email and password are required');
-    const  row  = await db.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
+    const row = await db.query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
     const user = row.rows[0];
-
+     console.log(JSON.stringify(user));
     if (!user) throw new HttpError(401, 'Invalid email or password');
 
     let ok = false;

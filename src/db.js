@@ -218,8 +218,7 @@ export async function initSchema() {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT NOT NULL DEFAULT '';
         ALTER TABLE users ALTER COLUMN password SET DEFAULT '';
-        
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS used_at TIMESTAMPTZ;
+    
 
         ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size TEXT NOT NULL DEFAULT '';
         ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name TEXT;
