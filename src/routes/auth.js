@@ -91,7 +91,7 @@ authRouter.post('/register', asyncHandler(async (req, res) => {
     const passwordHash = await hashPassword(password);
     const token = await withTransaction(async (client) => {
         await client.query(
-            'INSERT INTO users(id, name, email, password, role,email_verified,is_active) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            'INSERT INTO users(id, name, email, password_hash, role,email_verified,is_active) VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [id, name.trim(), normalizedEmail, passwordHash, 'customer', false, true]
         );
         const token = generateToken();
