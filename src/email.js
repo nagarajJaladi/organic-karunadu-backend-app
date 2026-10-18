@@ -48,7 +48,7 @@ import { config } from './config.js';
             return { delivered: false, logged: true };
         }
         const transporter = await getTransporter();
-  console.log('inside sendEmail sending email:4');
+        console.log('inside sendEmail sending email:4');
         //validate SMTP connection/credentials
         try {
             await transporter.verify();
@@ -68,7 +68,7 @@ import { config } from './config.js';
         return {delivered: true, logged: false};
     }
  export async function sendVerificationEmail(to, token) { 
-      console.log('inside sendverificationEmail sending email:2');
+      console.log('inside sendverificationEmail sending email:2 to::'+to);
 
     const url = `${config.frontEndUrl}/verify-email?token=${encodeURIComponent(token)}`;
     const subject = 'Verify your email address';
