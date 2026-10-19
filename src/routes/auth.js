@@ -48,7 +48,9 @@ authRouter.post('/login', asyncHandler(async (req, res) => {
         console.log('login:3');
         if(user.password_hash) {
             console.log('login:4');
+            console.log('password: '+password+' user.password_hash:'+user.password_hash);
             ok = await verifyPassword(password, user.password_hash);
+            console.log('ok: '+ok);
             console.log('login:5');
         } else if(user.password) {
             console.log('login:6')
