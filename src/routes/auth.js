@@ -3,7 +3,15 @@ import bcrypt from 'bcryptjs';
 import { db, withTransaction } from '../db.js';
 import { toUser } from '../mapper.js';
 import { createAccessToken, requireAdmin, requireAuth } from '../auth-middleware.js'; 
-import { asyncHandler, HttpError, genId, hashPassword, verifyPassword, generateToken, hashToken } from '../util.js';
+import { config } from '../config.js';
+import { asyncHandler, 
+    HttpError, 
+    genId,
+    hashPassword, 
+    verifyPassword, 
+    generateToken, 
+    hashToken, 
+    signJwt } from '../util.js';
 import { sendVerificationEmail } from '../email.js'; 
 export const authRouter = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
