@@ -12,120 +12,120 @@ export const SEED_USERS = [
     {id:'u-demo',name:'Demo User',email:'demo@shop.com', role:'customer', password:'demo123'}
 ];
 export const SEED_PRODUCTS = [
-    {
-        id:'p1',
-        name:'saflower oil',
-        description: 'better health',
-        price: 5,
-        category:'bevarages',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:4.6,
-        ratingCount:126
-    },
-    {
-        id:'p2',
-        name:'Coconut oil',
-        description: 'better health',
-        price: 11,
-        category:'vegitables',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:2,
-        ratingCount:12
-    },{
-        id:'p3',
-        name:'ground nut oil',
-        description: 'better health',
-        price: 32,
-        category:'bevarages',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:5,
-        ratingCount:33
-    },{
-        id:'p4',
-        name:'sas oil',
-        description: 'better health',
-        price: 66,
-        category:'bevarages',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:4.6,
-        ratingCount:126
-    },{
-        id:'p5',
-        name:'saflower oil',
-        description: 'better health',
-        price: 1,
-        category:'bevarages',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:3,
-        ratingCount:126
-    },{
-        id:'p6',
-        name:'saflower oil',
-        description: 'better health',
-        price: 9,
-        category:'bevarages',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:0,
-        rating:1,
-        ratingCount:1
-    },{
-        id:'p7',
-        name:'saflower oil',
-        description: 'better health',
-        price: 1223,
-        category:'vegitables',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:4.6,
-        ratingCount:1289
-    },{
-        id:'p8',
-        name:'saflower oil',
-        description: 'better health',
-        price: 1223,
-        category:'vegitables',
-        brand: 'aurora',
-        image: svgImage('#4f46e5', 'Headphones'),
-        stock:25,
-        rating:3,
-        ratingCount:12
-    }
+    // {
+    //     id:'p1',
+    //     name:'saflower oil',
+    //     description: 'better health',
+    //     price: 5,
+    //     category:'bevarages',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:4.6,
+    //     ratingCount:126
+    // },
+    // {
+    //     id:'p2',
+    //     name:'Coconut oil',
+    //     description: 'better health',
+    //     price: 11,
+    //     category:'vegitables',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:2,
+    //     ratingCount:12
+    // },{
+    //     id:'p3',
+    //     name:'ground nut oil',
+    //     description: 'better health',
+    //     price: 32,
+    //     category:'bevarages',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:5,
+    //     ratingCount:33
+    // },{
+    //     id:'p4',
+    //     name:'sas oil',
+    //     description: 'better health',
+    //     price: 66,
+    //     category:'bevarages',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:4.6,
+    //     ratingCount:126
+    // },{
+    //     id:'p5',
+    //     name:'saflower oil',
+    //     description: 'better health',
+    //     price: 1,
+    //     category:'bevarages',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:3,
+    //     ratingCount:126
+    // },{
+    //     id:'p6',
+    //     name:'saflower oil',
+    //     description: 'better health',
+    //     price: 9,
+    //     category:'bevarages',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:0,
+    //     rating:1,
+    //     ratingCount:1
+    // },{
+    //     id:'p7',
+    //     name:'saflower oil',
+    //     description: 'better health',
+    //     price: 1223,
+    //     category:'vegitables',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:4.6,
+    //     ratingCount:1289
+    // },{
+    //     id:'p8',
+    //     name:'saflower oil',
+    //     description: 'better health',
+    //     price: 1223,
+    //     category:'vegitables',
+    //     brand: 'aurora',
+    //     image: svgImage('#4f46e5', 'Headphones'),
+    //     stock:25,
+    //     rating:3,
+    //     ratingCount:12
+    // }
 ];
 export const SEED_REVIEWS = [
-    {
-        id:'r1',
-        productId:'p1',
-        author: 'Jordan',
-        rating: 5,
-        comment: 'nicee',
-        createdAt: '2026-06-01T0:00:00.000Z'
-    },
-    {
-        id:'r2',
-        productId:'p1',
-        author: 'Jordan',
-        rating: 4,
-        comment: 'nicee',
-        createdAt: '2026-06-01T0:00:00.000Z'
-    },
-    {
-        id:'r3',
-        productId:'p2',
-        author: 'Jordan',
-        rating: 2,
-        comment: 'nicee',
-        createdAt: '2026-06-01T0:00:00.000Z'
-    }
+    // {
+    //     id:'r1',
+    //     productId:'p1',
+    //     author: 'Jordan',
+    //     rating: 5,
+    //     comment: 'nicee',
+    //     createdAt: '2026-06-01T0:00:00.000Z'
+    // },
+    // {
+    //     id:'r2',
+    //     productId:'p1',
+    //     author: 'Jordan',
+    //     rating: 4,
+    //     comment: 'nicee',
+    //     createdAt: '2026-06-01T0:00:00.000Z'
+    // },
+    // {
+    //     id:'r3',
+    //     productId:'p2',
+    //     author: 'Jordan',
+    //     rating: 2,
+    //     comment: 'nicee',
+    //     createdAt: '2026-06-01T0:00:00.000Z'
+    // }
 ];
