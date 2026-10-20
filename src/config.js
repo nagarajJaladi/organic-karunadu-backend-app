@@ -17,6 +17,7 @@ export const config = {
     .map((o) => o.trim())
     .filter(Boolean),
     frontEndUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
+    jwtExpiresInSec: Number(process.env.JWT_EXPIRES_IN_SEC) || 60 * 60 * 24 * 7,
     email: {
         host: process.env.EMAIL_HOST || '',
         port: Number(process.env.EMAIL_PORT) || 587,

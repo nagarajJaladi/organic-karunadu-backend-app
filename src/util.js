@@ -70,3 +70,46 @@ export function generateToken() {
 export function hashToken(token) {
     return crypto.createHash('sha256').update(token).digest('hex');
 }
+function base64UrlEncode(input) {
+    return Buffer.from(input)
+        .toString('base64')
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+}
+function base64UrlDecode(input) {
+    input = input.replace(/-/g, '+').replace(/_/g, '/');
+    while (input.length % 4) {
+        input += '=';
+    }
+    return Buffer.from(input, 'base64');
+}
+function hmacSign(data, secret) {
+    return crypto.createHmac('sha256', secret).update(data).digest();
+}
+export function signJwt(payload, scret, expiresInSec = 60 * 60 * 24 * 7) {
+    const header = {
+        alg: 'HS256',
+        typ: 'JWT'
+    };
+    const payloadWithExp = {
+        ...payload,
+        exp: Math.floor(Date.now() / 1000) + expiresInSec
+    };
+    const encodedHeader = base64UrlEncode(JSON.stringify(header));
+    const encodedPayload = base64UrlEncode(JSON.stringify(payloadWithExp));
+    const signature = base64UrlEncode(hmacSign(`${encodedHeader}.${encodedPayload}`, scret));
+    return `${encodedHeader}.${encodedPayload}.${signature}`;
+}
+export function verifyJwt(token, secret) {
+    const [encodedHeader, encodedPayload, signature] = token.split('.');
+    if (!encodedHeader || !encodedPayload || !signature) return null;
+
+    const expectedSignature = base64UrlEncode(hmacSign(`${encodedHeader}.${encodedPayload}`, secret));
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) return null;
+
+    const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8'));
+    if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
+
+    return payload;
+}

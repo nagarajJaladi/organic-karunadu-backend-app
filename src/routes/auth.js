@@ -7,6 +7,13 @@ import { asyncHandler, HttpError, genId, hashPassword, verifyPassword, generateT
 import { sendVerificationEmail } from '../email.js'; 
 export const authRouter = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function issueAuthToken(user) {
+    return signJwt({sub: user.id, role:user.role, email: user.email},
+        config.jwtSecret,   
+        config.jwtExpiresInSec
+    );
+}
 const TOKEN_TTL_MINUTES = 30;
 async function issueVerificationToken(userId) {
     const token = generateToken();
@@ -72,7 +79,7 @@ authRouter.post('/login', asyncHandler(async (req, res) => {
           console.log('login:12');
         return res.status(403).json({ ok: false, code: 'EMAIL_NOT_VERIFIED', error: 'Please verify your email. Check your inbox for the verification email.' });
     }
-    res.json({ ok: true,user: toUser(user)   });
+    res.json({ ok: true,user: toUser(user) , token: issueAuthToken(user) });
 }));
 
 authRouter.post('/register', asyncHandler(async (req, res) => { 
@@ -136,7 +143,7 @@ authRouter.post('/verify-email', asyncHandler(async (req, res) => {
     });
     const userRows = user.rows;
     if (!userRows[0]) throw new HttpError(404, 'User not found');
-    res.json({ ok: true, message: 'Email successfully verified', user: toUser(userRows[0]) });
+    res.json({ ok: true, message: 'Email successfully verified', token: issueAuthToken(userRows[0]), user: toUser(userRows[0]) });
 }));
 authRouter.post('/resend-verification', asyncHandler(async (req, res) => {
     const { email } = req.body || {};
