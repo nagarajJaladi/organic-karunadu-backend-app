@@ -49,7 +49,10 @@ app.get('/api', (_req,res) => {
                 'POST /api/auth/login',
                 'POST /api/auth/register',
                 'GET /api/auth/users',
-                'GET /api/auth/users/:id'
+                'GET /api/auth/users/:id',
+                'POST /api/auth/forgot-password',
+                'POST /api/auth/reset-password',
+                'POST /api/auth/resend-verification'
             ],
             orders: [
                 'GET /api/admin/orders?page=&pageSize=&search=&status=&paymentStatus=&from=&to=',

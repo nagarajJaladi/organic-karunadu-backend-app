@@ -6,9 +6,9 @@ export async function seed({ force = false } = {}) {
     const client = await db.connect();
     try {
         await client.query('BEGIN');
-        if (force) {
-            await client.query('TRUNCATE wishlist, order_items, orders, reviews, products, categories, users RESTART IDENTITY CASCADE');
-        }
+        // if (force) {
+        //     await client.query('TRUNCATE wishlist, order_items, orders, reviews, categories, users RESTART IDENTITY CASCADE');
+        // }
         for (const user of SEED_USERS) {
             const passwordHash = await hashPassword(user.password);
 

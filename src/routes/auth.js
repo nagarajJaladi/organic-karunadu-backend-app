@@ -153,6 +153,72 @@ authRouter.post('/verify-email', asyncHandler(async (req, res) => {
     if (!userRows[0]) throw new HttpError(404, 'User not found');
     res.json({ ok: true, message: 'Email successfully verified', token: issueAuthToken(userRows[0]), user: toUser(userRows[0]) });
 }));
+authRouter.post('/forgot-password', asyncHandler(async (req, res) => {
+    const { email } = req.body || {};
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const generic = {
+        ok:true,
+        message:'If an account exists for that email, a password reset link has been sent.'
+    };
+    if(!normalizedEmail) {
+        return res.json(generic);
+    }
+
+    const user = await db.query('SELECT * FROM users WHERE email = $1', [normalizedEmail]);
+    if (!user.rows[0]) {
+        return res.json(generic);
+    }
+    await db.query(
+        'UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at is NULL',
+        [user.rows[0].id]
+    );
+    
+    const token = generateToken();
+    await db.query(
+        `INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '${TOKEN_TTL_MINUTES} minutes')`,
+        [user.rows[0].id, hashToken(token)]
+    );
+ 
+    try {
+        await sendPasswordResetEmail(user.rows[0].email, token);
+    } catch (err) {
+        console.warn('Failed to send password reset email', err);
+    }
+    return res.json(generic);
+}));
+authRouter.post('/reset-password', asyncHandler(async (req, res) => {
+    const { token, newPassword } = req.body || {};
+
+    if (!token || !newPassword) {
+        throw new HttpError(400, 'Token and new password are required');
+    }
+    if(typeof newPassword !== 'string' || newPassword.length < 8) {
+        throw new HttpError(400, 'Password must be at least 8 characters long');
+    }
+    const hashedToken = hashToken(token);
+    const newHash = await hashPassword(newPassword);
+    await withTransaction(async (client) => {
+        const result = await client.query(
+            'SELECT * FROM password_reset_tokens WHERE token = $1 AND used_at IS NULL',
+            [hashedToken]
+        );
+        const row = result.rows[0];
+        if (!row || new Date(row.expires_at) < new Date()) {
+            throw new HttpError(400, 'Invalid or expired token');
+        }
+        await client.query(
+            'UPDATE password_reset_tokens SET used_at = NOW() WHERE token = $1',
+            [hashedToken]
+        );
+        await client.query(
+            'UPDATE users SET password = $1 WHERE id = $2',
+            [newHash, row.user_id]
+        );
+        await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL', [row.user_id]);
+    });
+
+    res.json({ ok: true, message: 'Password successfully reset' });
+}));
 authRouter.post('/resend-verification', asyncHandler(async (req, res) => {
     const { email } = req.body || {};
     const normalizedEmail = (email || '').trim().toLowerCase();

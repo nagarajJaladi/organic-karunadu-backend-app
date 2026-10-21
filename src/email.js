@@ -41,6 +41,13 @@ import { config } from './config.js';
                 console.log('inside getTransporter:2');
         return cachedTransporter;
     }
+    export async function sendPasswordResetEmail(to, token) {
+        const url = `${config.frontEndUrl}/reset-password?token=${encodeURIComponent(token)}`;
+        const subject = 'Reset your password';
+        const text = `You requested a password reset. Click the following link to reset your password: ${url}` +
+            ` This link will expire in 30 minutes. If you did not request this, please ignore this email.`;
+        return await sendEmail({to, subject, text});
+    }
     export async function sendEmail({to,subject,text}){
           console.log('inside sendEmail sending email:3');
         if (!smtpConfigured()){
