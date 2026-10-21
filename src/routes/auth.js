@@ -208,7 +208,7 @@ authRouter.post('/reset-password', asyncHandler(async (req, res) => {
             [hashedToken]
         );
         console.log('Result:', JSON.stringify(result));
-        const row = result.rows[0];
+        const row = result[0];
         if (!row || new Date(row.expires_at) < new Date()) {
             throw new HttpError(400, 'Invalid or expired token');
         }
