@@ -187,16 +187,16 @@ authRouter.post('/forgot-password', asyncHandler(async (req, res) => {
     return res.json(generic);
 }));
 authRouter.post('/reset-password', asyncHandler(async (req, res) => {
-    const { token, newPassword } = req.body || {};
+    const { token, password } = req.body || {};
 
-    if (!token || !newPassword) {
+    if (!token || !password) {
         throw new HttpError(400, 'Token and new password are required');
     }
-    if(typeof newPassword !== 'string' || newPassword.length < 8) {
+    if(typeof password !== 'string' || password.length < 8) {
         throw new HttpError(400, 'Password must be at least 8 characters long');
     }
     const hashedToken = hashToken(token);
-    const newHash = await hashPassword(newPassword);
+    const newHash = await hashPassword(password);
     await withTransaction(async (client) => {
         const result = await client.query(
             'SELECT * FROM password_reset_tokens WHERE token = $1 AND used_at IS NULL',
