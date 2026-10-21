@@ -217,7 +217,7 @@ authRouter.post('/reset-password', asyncHandler(async (req, res) => {
             [hashedToken]
         );
         await client.query(
-            'UPDATE users SET password = $1 WHERE id = $2',
+            'UPDATE users SET password_hash = $1 WHERE id = $2',
             [newHash, row.user_id]
         );
         await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL', [row.user_id]);
