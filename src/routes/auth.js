@@ -197,11 +197,17 @@ authRouter.post('/reset-password', asyncHandler(async (req, res) => {
     }
     const hashedToken = hashToken(token);
     const newHash = await hashPassword(password);
+    console.log('Token:', token);
+    console.log('Password:', password);
+    console.log('Hashed token:', hashedToken);
+    console.log('Hashed new password:', newHash);
+
     await withTransaction(async (client) => {
         const result = await client.query(
             'SELECT * FROM password_reset_tokens WHERE token = $1 AND used_at IS NULL',
             [hashedToken]
         );
+        console.log('Result:', JSON.stringify(result));
         const row = result.rows[0];
         if (!row || new Date(row.expires_at) < new Date()) {
             throw new HttpError(400, 'Invalid or expired token');
