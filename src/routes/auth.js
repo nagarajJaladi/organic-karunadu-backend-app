@@ -12,7 +12,7 @@ import { asyncHandler,
     generateToken, 
     hashToken, 
     signJwt } from '../util.js';
-import { sendVerificationEmail } from '../email.js'; 
+import { sendVerificationEmail, sendPasswordResetEmail } from '../email.js'; 
 export const authRouter = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
