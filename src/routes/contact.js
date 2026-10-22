@@ -1,9 +1,11 @@
 import {Router} from 'express';
 import {db } from '../db.js';
 import {asyncHandler,HttpError} from '../util.js';
-import {requireAdmin} from '../auth-middleware.js';
+import {requireAdmin,requireAuth} from '../auth-middleware.js';
 
 export const contactRouter = Router();
+export const adminContactRouter = Router();
+adminContactRouter.use(requireAuth, requireAdmin);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUSES = ['new', 'read', 'archived'];
 
@@ -38,7 +40,7 @@ contactRouter.post('/', asyncHandler(async (req, res) => {
     res.json({ok: true, message: 'Thanks for reaching out - we will get back to you soon'});
 }));
 
-contactRouter.patch('/:id', requireAdmin, asyncHandler(async (req, res) => {
+adminContactRouter.patch('/:id', asyncHandler(async (req, res) => {
     const {status} = req.body || {};
     if(!STATUSES.includes(status)) {
         throw new HttpError(400,   `status must be one of: ${STATUSES.join(', ')}`);
@@ -52,7 +54,7 @@ contactRouter.patch('/:id', requireAdmin, asyncHandler(async (req, res) => {
     }
     res.json({ok: true});
 }));    
-contactRouter.get('/', requireAdmin, asyncHandler(async (req, res) => {
+adminContactRouter.get('/', asyncHandler(async (req, res) => {
     const {status} = req.query || {};
     const result = STATUSES.includes(status) ? await db.query('SELECT * FROM contact_messages WHERE status = $1 ORDER BY created_at DESC', 
         [status]
