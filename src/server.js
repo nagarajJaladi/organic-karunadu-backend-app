@@ -88,8 +88,8 @@ app.get('/api', (_req,res) => {
             ],
             contact: [
                 'POST /api/contact',
-                'PATCH /api/contact/:id',
-                'GET /api/contact'
+                'PATCH /api/admin/contact/:id',
+                'GET /api/admin/contact'
             ]
 
         }
