@@ -59,5 +59,5 @@ adminContactRouter.get('/', asyncHandler(async (req, res) => {
     const result = STATUSES.includes(status) ? await db.query('SELECT * FROM contact_messages WHERE status = $1 ORDER BY created_at DESC', 
         [status]
     ): await db.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
-    res.json(result.map(toMessage));
+    res.json(result.rows.map(toMessage));
 }));
