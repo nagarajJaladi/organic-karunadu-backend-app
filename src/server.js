@@ -12,6 +12,8 @@ import { adminOrdersRouter } from './routes/admin-orders.js';
 import { deliveryRouter, adminDeliveryRouter } from './routes/delivery.js';
 import { wishlistRouter} from './routes/wishlist.js';
 import { HttpError } from './util.js';
+import { contactRouter } from './routes/contact.js';
+
 
 if (!config.jwtSecret) throw new Error('JWT_SECRET must be set in the backend environment');
 
@@ -78,7 +80,18 @@ app.get('/api', (_req,res) => {
                 'GET /api/wishlist/:userId/products',
                 'POST /api/wishlist/:userId/toggle',
                 'DELETE /api/wishlist/:userId/:productId'
+            ],
+            categories: [
+                'GET /api/categories',
+                'POST /api/categories',
+                'DELETE /api/categores/:id'
+            ],
+            contact: [
+                'POST /api/contact',
+                'PATCH /api/contact/:id',
+                'GET /api/contact'
             ]
+
         }
     });
 });
@@ -91,6 +104,7 @@ app.use('/api/admin/orders', adminOrdersRouter);
 app.use('/api/delivery', deliveryRouter);
 app.use('/api/admin/delivery', adminDeliveryRouter);
 app.use('/api/wishlist',wishlistRouter);
+app.use('/api/contact', contactRouter);
 app.use((req, res) =>  {
     res.status(404).json({error:   `Not found: ${req.method} ${req.originalUrl}`});
 });
